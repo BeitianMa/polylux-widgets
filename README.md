@@ -1,142 +1,67 @@
-# Polylux <img src="https://andreaskroepelin.github.io/polylux/book/logo.png" style="width: 3em;"></img>
-This is a package for creating presentation slides in [Typst](https://typst.app/).
-Read the [book](https://polylux.dev/book) to learn all
-about it and click [here](https://polylux.dev/book/changelog.html)
-to see what's new!
+# Polylux-Widgets
+This repository is a fork of [Polylux](https://github.com/andreasKroepelin/polylux), which is a package for creating presentation slides in Typst. Polylux-Widgets wants to provide a set of reusable widgets and build a bridge between theme templates and basic Polylux utilities.
 
-If you like it, consider [giving a star on GitHub](https://github.com/andreasKroepelin/polylux)!
+## Philosophy
+This repository is primarily for template designers, not template users.
 
-[![Book badge](https://img.shields.io/badge/docs-book-green)](https://polylux.dev/book)
-![GitHub](https://img.shields.io/github/license/andreasKroepelin/polylux)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/andreasKroepelin/polylux)
-![GitHub Repo stars](https://img.shields.io/github/stars/andreasKroepelin/polylux)
-[![Demo badge](https://img.shields.io/badge/demo-pdf-blue)](https://github.com/andreasKroepelin/polylux/releases/latest/download/demo.pdf)
-![Themes badge](https://img.shields.io/badge/themes-5-aqua)
+I wanted to keep the Polylux itself lightweight while also allowing designers to avoid reinventing the wheel.
 
+## An Example
+I provided an [example](themes\aranya.typ) of using widgets to design templates, where I add [progress bubbles](widgets\progress-bubbles.typ) on the top of the slides. You can also use [goto buttons](widgets\goto-button.typ) to navigate between slides.
 
-## Quickstart
-For the bare-bones, do-it-yourself experience, all you need is:
-```typ
-// Get Polylux from the official package repository
-#import "@preview/polylux:0.3.1": *
+![aranya](book\src\themes\gallery\aranya.png)
 
-// Make the paper dimensions fit for a presentation and the text larger
-#set page(paper: "presentation-16-9")
-#set text(size: 25pt)
+The above is an [demo](book\src\themes\gallery\aranya.typ) using this template.
 
-// Use #polylux-slide to create a slide and style it using your favourite Typst functions
-#polylux-slide[
-  #align(horizon + center)[
-    = Very minimalist slides
+## How to Use
+So far I've only realized two widgets: progress bubbles which indicate page level presentation progress and goto buttons which allow you to navigate between slides.
 
-    A lazy author
+There are roughly three steps to use widgets in your template (take progress bubbles as an example):
 
-    July 23, 2023
-  ]
-]
+1. Include the widget file in your template.
+    ```typ
+    #import "../utils/widgets-utils.typ": register-page-info
+    #import "../widgets/progress-bubbles.typ": PAGE-TYPES, progress-bubbles-band
+    ```
 
-#polylux-slide[
-  == First slide
+2. Register required information of certain pages.
+    ```typ
+    #let slide(title: none, body) = {
+        ... //
 
-  Some static text on this slide.
-]
+        let content = {
+            register-page-info(PAGE-TYPES.slide)
+            
+            ...// some formatting 
+            
+            body 
+        }
+        
+        logic.polylux-slide(content)
+    }
+    ```
+    To provide page level progress information, progress bubbles need to know the physical and logical page numbers of each page. And the type (content slides or section slides) of each page is also required. `register-page-info()` function from [`widgets-utils.typ`](utils\widgets-utils.typ) is used to register this information.
 
-#polylux-slide[
-  == This slide changes!
-
-  You can always see this.
-  // Make use of features like #uncover, #only, and others to create dynamic content
-  #uncover(2)[But this appears later!]
-]
-```
-This code produces these PDF pages:
-![minimal example](https://polylux.dev/book/minimal.png)
-
-From there, you can either start creatively adapting the looks to your likings
-or you can use one of the provided themes.
-The simplest one of them is called `simple` (what a coincidence!).
-It is still very unintrusive but gives you some sensible defaults:
-```typ
-#import "@preview/polylux:0.3.1": *
-
-#import themes.simple: *
-
-#set text(font: "Inria Sans")
-
-#show: simple-theme.with(
-  footer: [Simple slides],
-)
-
-#title-slide[
-  = Keep it simple!
-  #v(2em)
-
-  Alpha #footnote[Uni Augsburg] #h(1em)
-  Bravo #footnote[Uni Bayreuth] #h(1em)
-  Charlie #footnote[Uni Chemnitz] #h(1em)
-
-  July 23
-]
-
-#slide[
-  == First slide
-
-  #lorem(20)
-]
-
-#focus-slide[
-  _Focus!_
-
-  This is very important.
-]
-
-#centered-slide[
-  = Let's start a new section!
-]
-
-#slide[
-  == Dynamic slide
-  Did you know that...
-
-  #pause
-  ...you can see the current section at the top of the slide?
-]
-```
-This time, we obtain these PDF pages:
-![simple example](https://polylux.dev/book/themes/gallery/simple.png)
-
-As you can see, a theme can introduce its own types of slides (here: `title-slide`,
-`slide`, `focus-slide`, `centered-slide`) to let you quickly switch between
-different layouts.
-The book
-[has more infos](https://polylux.dev/book/themes/themes.html)
-on how to use (and create your own) themes.
-
-
-For dynamic content, Polylux also provides [a convenient API for complex
-overlays](https://polylux.dev/book/dynamic/dynamic.html).
-
-If you use [pdfpc](https://pdfpc.github.io/) to display your slides, you can rely
-on [Polylux' support for it](https://polylux.dev/book/external/pdfpc.html)
-and create speaker notes, hide slides, configure the timer and more!
-
-Visit the
-[book](https://polylux.dev/book)
-for more details or take a look at the
-[demo PDF](https://github.com/andreasKroepelin/polylux/releases/latest/download/demo.pdf)
-where you can see the features of this template in action.
-
-**⚠ This package is under active development and there are no backwards
-compatibility guarantees!**
+3. Put the widget in the right place. I put progress bubbles on the top of the slides.
+    ```typ
+    #let slide(title: none, body) = {
+        let header = {
+            set align(top)
+            if title != none {
+            stack(
+                dir: ttb,
+                aranya-sect-band,
+                aranya-heading-band(title))
+            } else {
+            [#aranya-sect-band]
+            }
+        }
+        ...
+    }
+    ```
+I omitted some details in the above code for simplicity. You can check the [example](themes\aranya.typ) for more information.
 
 ## Acknowledgements
-Thank you to...
-- [@drupol](https://github.com/drupol) for the `university` theme
-- [@Enivex](https://github.com/Enivex) for the `metropolis` theme
-- [@MarkBlyth](https://github.com/MarkBlyth) for contributing to the `clean` theme
-- [@ntjess](https://github.com/ntjess) for contributing to the height fitting
-  feature
-- [@JuliusFreudenberger](https://github.com/JuliusFreudenberger) for maintaining
-  the `polylux2pdfpc` AUR package
-- [@fncnt](https://github.com/fncnt) for coming up with the name "Polylux"
-- the Typst authors and contributors for this refreshing piece of software
+Thanks to [@andreasKroepelin](https://github.com/andreasKroepelin) for the `polylux` package. And thanks to [@Enivex](https://github.com/Enivex) for the `metropolis` theme, which I used as a base to design the `aranya` theme.
+
+Any suggestions or contributions are very welcome!
